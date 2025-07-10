@@ -1,7 +1,8 @@
 #Projet fin sass
 #Imortation de biblio Pandas
 import pandas as pd
-import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 #** 1-Charger le jeu de données à l’aide de Pandas.
 df = pd.read_csv('DataSet.csv')
@@ -20,7 +21,7 @@ df = pd.read_csv('DataSet.csv')
 
 
 nv_colonnes = ['SEQN', 'SMQ020', 'RIAGENDR', 'RIDAGEYR', 'DMDEDUC2', 'BMXWT', 'BMXHT', 'BMXBMI']
-df_sous_ensemble = df[nv_colonnes]
+df_sous_ensemble = df[nv_colonnes].copy() 
 
 #print(df_sous_ensemble.head())
 
@@ -41,19 +42,24 @@ df_sous_ensemble.columns=['seqn','smoking','gender', 'age','education','weight',
 #drop_duplicated()
 
 ##** 9- Supprimer la colonne 'seqn', considérée comme un identifiant inutile pour l’analyse.
-#print(df_sous_ensemble.drop("seqn", axis=1))
+print('**** drop')
+print(df_sous_ensemble.drop("seqn", axis=1))
+df_sous_ensemble=df_sous_ensemble.drop("seqn", axis=1)
+print('**** colums')
+print(df_sous_ensemble.columns)
 
 ##** 10 -Identifier les valeurs manquantes (NaN) dans les colonnes.
 #print(df_sous_ensemble.isnull().sum())
 
 ##** 11-Remplacer les valeurs manquantes :
 #    *education : remplacer par la médiane
-df_sous_ensemble.education  =df_sous_ensemble.education.fillna(df_sous_ensemble.education.median)
 
 #    *weight, height, bmi : remplacer par la moyenne
-df_sous_ensemble.weight  =df_sous_ensemble.weight.fillna(df_sous_ensemble.weight.mean)
-df_sous_ensemble.height  =df_sous_ensemble.height.fillna(df_sous_ensemble.height.mean)
-df_sous_ensemble.bmi  =df_sous_ensemble.bmi.fillna(df_sous_ensemble.bmi.mean)
+df_sous_ensemble['education'].fillna(df_sous_ensemble['education'].median())
+
+df_sous_ensemble['height'].fillna(df_sous_ensemble['height'].mean())
+df_sous_ensemble['bmi'].fillna(df_sous_ensemble['bmi'].mean())
+
 #print(df_sous_ensemble.isnull().sum())
 
 
@@ -83,6 +89,31 @@ for i in collone:
     df_sous_ensemble = df_sous_ensemble.reset_index(drop=True)
    
 
-print(df_sous_ensemble)
+
+#** 15-Remplacer les codes numériques par des labels explicites dans trois colonnes :
+
+#smoking : {1: 'yes', 2: 'no', 7: nan, 8: nan}
+df_sous_ensemble['smoking'] = df_sous_ensemble['smoking'].replace({1:'yes',2:'no',7:"nan",8:"nan"})
+#gender : {1: 'male', 2: 'female'}
+
+df_sous_ensemble["gender"] = df_sous_ensemble["gender"].replace({1: "femme", 2: "homme"})
+#education :{    1: '<9th grade', 2: '9-11th grade', 3: 'HS or GED', 4: 'Some college / AA', 5: 'College or above', 7: 'Other', 8: 'Other'}
+df_sous_ensemble['education'] = df_sous_ensemble['education'].replace({    1: '<9th grade', 2: '9-11th grade', 3: 'HS or GED', 4: 'Some college / AA', 5: 'College or above', 7: 'Other', 8: 'Other'})
+
+# print(df_sous_ensemble)
+
+#** 16-Analyser les relations entre variables :
 
 
+#Utiliser Seaborn Pairplot
+
+plt.title('les relation entre les variable')
+sns.pairplot(df_sous_ensemble, hue='gender')
+#plt.show()
+#Créer des graphiques individuels pour observer la distribution ou la corrélation de chaque attribut.
+plt.title("Distribution de l'age")
+for i in collone:
+    sns.histplot(df_sous_ensemble[i])
+
+
+df_sous_ensemble.to_csv('data_nettoye.csv')
