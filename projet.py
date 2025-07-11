@@ -3,6 +3,27 @@
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import os
+from dotenv import load_dotenv
+
+from sqlalchemy import create_engine, MetaData , Table,func ,select ,case 
+
+
+
+
+load_dotenv()
+    
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_NAME = os.getenv("DB_NAME")
+
+
+#!!!!!!!! la connexion avec la base de donne
+
+DATABASE_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+engine = create_engine(DATABASE_URL)
 
 #** 1-Charger le jeu de données à l’aide de Pandas.
 df = pd.read_csv('DataSet.csv')
@@ -115,5 +136,56 @@ plt.title("Distribution de l'age")
 for i in collone:
     sns.histplot(df_sous_ensemble[i])
 
-
 df_sous_ensemble.to_csv('data_nettoye.csv')
+#**17 Sql
+
+metadata = MetaData()
+df_sous_ensemble.to_sql('health_data_cleaned', engine, if_exists='append', index=False)
+
+#** Quelle est la répartition des individus par genre (gender)
+health_data = Table('health_data_cleaned', metadata , autoload_with=engine)
+
+with engine.begin() as conn:
+    r1 = conn.execute(
+        select(health_data.c.gender, func.count().label("nombre"))
+        .group_by(health_data.c.gender)
+    )
+    for row in r1:
+        print(f"Genre: {row.gender}, Nombre: {row.nombre}")
+
+
+#*Quelle est la répartition des individus en fonction de leurs habitudes de tabagisme (smoking) 
+with engine.begin() as conn:
+    result = conn.execute(
+        select(health_data.c.smoking, func.count().label("nombre"))
+        .group_by(health_data.c.smoking)
+    )
+    for row in result:
+        print(f"Fumeur: {row.smoking}, Nombre: {row.nombre}")
+    #**Quelle est la moyenne de l'IMC (bmi) pour chaque genre (gender) 
+    result2 = conn.execute(
+        select(health_data.c.gender, func.avg(health_data.c.bmi).label("bmi_moyen"))
+        .group_by(health_data.c.gender)
+    )
+    for row in result2:
+        print(f"Genre: {row.gender}, BMI moyen: {row.bmi_moyen}")
+    #**Comment les individus se répartissent-ils en fonction de leur niveau d'éducation (education) ?
+    result3 = conn.execute(
+        select(health_data.c.education, func.count().label("bmi_moyen"))
+        .group_by(health_data.c.education)
+    )
+    for row in result3:
+        print(f"education: {row}")
+
+
+
+#** Quelle est l'évolution de l'IMC moyen (bmi) en fonction des tranches d'âge (par exemple, 18-30, 31-50, 51+) 
+age_groupe = case(
+    (health_data.c.age.between(18,30),'18-30'),
+    (health_data.c.age.between(31,35),'31-35'),
+    (health_data.c.age.between(18,30),'18-30')
+    (health_data.c.age >=51 , "51+")
+)
+
+
+
