@@ -183,9 +183,15 @@ with engine.begin() as conn:
 age_groupe = case(
     (health_data.c.age.between(18,30),'18-30'),
     (health_data.c.age.between(31,35),'31-35'),
-    (health_data.c.age.between(18,30),'18-30')
-    (health_data.c.age >=51 , "51+")
+    (health_data.c.age >=51 ,"51+")
 )
 
+with engine.begin() as conn :
+    resultat4 = conn.execute(select(age_groupe ,func.avg(health_data.c.bmi)).group_by(age_groupe))
+    for row in resultat4:
+        print(row)
+    result5= conn.execute(select(health_data.c.smoking ,func.avg(health_data.c.age)).group_by(health_data.c.smoking))
+    for row in result5 :
+        print(row)
 
 
